@@ -68,3 +68,55 @@ def book_appointment(appointment: Appointment) -> Appointment:
 
     appointments_db[appointment.appointment_id] = appointment
     return appointment
+
+
+@router.get(
+    "",
+    response_model=list[Appointment],
+    status_code=status.HTTP_200_OK,
+    summary="Get all appointments",
+    responses={
+        200: {"description": "List of all booked appointments"}
+    }
+)
+@router.get(
+    "/",
+    response_model=list[Appointment],
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False
+)
+def get_all_appointments() -> list[Appointment]:
+    """
+    Retrieve all booked appointments.
+
+    Returns:
+        List of all Appointment objects currently in `appointments_db`.
+    """
+    return list(appointments_db.values())
+
+
+@router.get(
+    "/{appointment_id}",
+    response_model=Appointment,
+    status_code=status.HTTP_200_OK,
+    summary="Get a specific appointment by ID",
+    responses={
+        200: {"description": "Appointment record found"},
+        404: {"description": "Appointment with the specified ID not found"}
+    }
+)
+def get_appointment_by_id(appointment_id: str) -> Appointment:
+    """
+    Retrieve details of a specific appointment by its unique appointment ID.
+
+    - **appointment_id**: Unique identifier for the appointment to retrieve.
+
+    Raises:
+        HTTPException (404): If no appointment exists with the given `appointment_id`.
+    """
+    if appointment_id not in appointments_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Appointment with ID '{appointment_id}' not found"
+        )
+    return appointments_db[appointment_id]
