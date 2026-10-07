@@ -53,3 +53,9 @@ Our team enforces a structured GitFlow branching strategy to ensure code quality
   3. Ensure automated checks pass in Jenkins/GitHub Actions.
   4. Team Lead approves and merges the Pull Request.
 
+---
+
+## Related Documentation
+- 📐 [Project Architecture Documentation](./Project_Architecture.md)
+
+

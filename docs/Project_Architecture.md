@@ -52,3 +52,9 @@ graph LR
     DockerBuild --> K8sDeploy["Stage: Deploy to Kubernetes (kubectl apply)"]
 ```
 
+---
+
+## Related Documentation
+- 📋 [Team Charter & Governance Documentation](./Team_Charter.md)
+
+
