@@ -17,3 +17,38 @@ The **Client Appointment Booking System** is built as a microservice-ready, stat
 | **CI/CD Automation** | Jenkins | Automated build, test execution, container image generation, and deployment triggers. |
 | **Orchestration** | Kubernetes (k8s) | Container deployment management, replication (2 replicas), service routing, and load balancing. |
 | **Version Control** | Git & GitHub | Source code management, branch isolation, and team collaboration via GitFlow. |
+
+---
+
+## High-Level API Architecture
+
+The system operates as a stateless RESTful service deployed on Kubernetes. Incoming traffic is routed through a Kubernetes Service LoadBalancer across redundant FastAPI pods.
+
+```mermaid
+graph TD
+    Client["Client / Web Browser"] --> K8sService["Kubernetes Service (LoadBalancer: Port 80)"]
+    K8sService --> Pod1["FastAPI Pod 1 (Uvicorn: Port 8000)"]
+    K8sService --> Pod2["FastAPI Pod 2 (Uvicorn: Port 8000)"]
+
+    subgraph FastAPI Application
+        Pod1 --> Routers["API Routers (/clients, /appointments, /admin)"]
+        Pod2 --> Routers
+        Routers --> Store["In-Memory Data Store (clients_db, appointments_db)"]
+    end
+```
+
+---
+
+## CI/CD Pipeline Workflow
+
+The continuous integration and continuous deployment pipeline automates testing, container image construction, and Kubernetes deployment upon code pushes.
+
+```mermaid
+graph LR
+    DevPush["Developer Push (feature branch)"] --> GitHub["GitHub Repository"]
+    GitHub --> Jenkins["Jenkins CI/CD Pipeline"]
+    Jenkins --> Pytest["Stage: Run Pytest (test_main.py)"]
+    Pytest --> DockerBuild["Stage: Build Docker Image (appointment-booking-api)"]
+    DockerBuild --> K8sDeploy["Stage: Deploy to Kubernetes (kubectl apply)"]
+```
+
