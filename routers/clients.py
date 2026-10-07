@@ -1,5 +1,15 @@
+"""
+Client Management API Router.
+
+This module provides RESTful endpoints for registering new clients and retrieving
+client details. It maintains an in-memory client data store (`clients_db`) accessed
+by downstream appointment and admin modules.
+"""
+
 from fastapi import APIRouter, HTTPException, status
 from models import Client
+
+__all__ = ["router", "clients_db"]
 
 router = APIRouter(prefix="/clients", tags=["Client Management"])
 
@@ -27,13 +37,14 @@ def register_client(client: Client) -> Client:
     """
     Register a new client in the system.
 
-    - **client_id**: Unique identifier for the client (must be unique).
+    - **client_id**: Unique identifier for the client (must be unique across all clients).
     - **name**: Full name of the client.
     - **email**: Email address of the client.
-    - **phone**: Contact phone number.
-    - **registered_at**: ISO timestamp of registration.
+    - **phone**: Contact phone number of the client.
+    - **registered_at**: ISO timestamp of client registration.
 
-    Raises HTTP 400 Bad Request if the client_id already exists in the system.
+    Raises:
+        HTTPException (400): If a client with the same `client_id` already exists.
     """
     if client.client_id in clients_db:
         raise HTTPException(
@@ -80,7 +91,10 @@ def get_client_by_id(client_id: str) -> Client:
     """
     Retrieve a specific client's details using their unique client_id.
 
-    Raises HTTP 404 Not Found if no client exists with the given ID.
+    - **client_id**: Unique identifier for the client to retrieve.
+
+    Raises:
+        HTTPException (404): If no client exists with the given `client_id`.
     """
     if client_id not in clients_db:
         raise HTTPException(

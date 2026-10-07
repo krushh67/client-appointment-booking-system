@@ -1,10 +1,24 @@
-from pydantic import BaseModel, Field
+"""
+Data models for the Client Appointment Booking System.
+
+This module defines foundational Pydantic data schemas used across the application,
+including Client registration, Appointment booking, and Status update payloads.
+"""
+
+from pydantic import BaseModel, ConfigDict, Field
+
+__all__ = ["Client", "Appointment", "StatusUpdate"]
 
 
 class Client(BaseModel):
     """
     Client model representing a registered client in the appointment booking system.
     """
+    model_config = ConfigDict(
+        populate_by_name=True,
+        str_strip_whitespace=True
+    )
+
     client_id: str = Field(
         ...,
         description="Unique identifier for the client",
@@ -36,6 +50,11 @@ class Appointment(BaseModel):
     """
     Appointment model representing a scheduled appointment.
     """
+    model_config = ConfigDict(
+        populate_by_name=True,
+        str_strip_whitespace=True
+    )
+
     appointment_id: str = Field(
         ...,
         description="Unique identifier for the appointment",
@@ -72,6 +91,11 @@ class StatusUpdate(BaseModel):
     """
     Status update payload model for appointment status transitions.
     """
+    model_config = ConfigDict(
+        populate_by_name=True,
+        str_strip_whitespace=True
+    )
+
     status: str = Field(
         ...,
         description="Updated status string (e.g., confirmed, cancelled)",
