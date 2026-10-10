@@ -12,12 +12,12 @@ pipeline {
         }
         stage('Install Dependencies') {
             steps {
-                bat 'pip install -r requirements.txt'
+                bat 'C:/Users/DELL/AppData/Local/Programs/Python/Python312/Scripts/pip.exe install -r requirements.txt'
             }
         }
         stage('Run Tests') {
             steps {
-                bat 'pytest test_main.py -v'
+                bat 'C:/Users/DELL/AppData/Local/Programs/Python/Python312/Scripts/pytest.exe test_main.py -v'
             }
         }
         stage('Build Docker Image') {
