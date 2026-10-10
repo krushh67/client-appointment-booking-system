@@ -23,7 +23,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    bat "C:/Users/DELL/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                 }
             }
         }
