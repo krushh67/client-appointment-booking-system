@@ -20,5 +20,18 @@ pipeline {
                 sh 'pytest test_main.py -v'
             }
         }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'kubectl apply -f k8s/deployment.yaml'
+                echo 'kubectl apply -f k8s/service.yaml'
+            }
+        }
     }
 }
