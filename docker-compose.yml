@@ -1,0 +1,59 @@
+# ==============================================================================
+# docker-compose.yml - Client Appointment Booking System (Role S8: Docker Engineer)
+# Multi-container orchestration for FastAPI Backend API and React Frontend UI.
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # FastAPI RESTful API Backend Service
+  # ----------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: appointment-booking-api:latest
+    container_name: appointment-booking-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - appointment-network
+
+  # ----------------------------------------------------------------------------
+  # React + Vite Frontend Web Application (AppointmentHub)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: appointment-booking-frontend:latest
+    container_name: appointment-booking-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    networks:
+      - appointment-network
+
+networks:
+  appointment-network:
+    name: appointment-network
+    driver: bridge
