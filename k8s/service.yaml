@@ -6,7 +6,7 @@ metadata:
     app: appointment-booking-api
     tier: backend
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: appointment-booking-api
   ports:

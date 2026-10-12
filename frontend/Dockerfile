@@ -12,7 +12,11 @@ WORKDIR /app
 
 # Install dependencies with layer caching
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
+
+# API base URL baked in at build time: /api = same site, nginx forwards to the backend.
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=${VITE_API_URL}
 
 # Copy source code and build production distribution
 COPY . .
