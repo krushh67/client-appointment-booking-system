@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: appointment-booking-service
+  labels:
+    app: appointment-booking-api
+    tier: backend
+spec:
+  type: LoadBalancer
+  selector:
+    app: appointment-booking-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000
