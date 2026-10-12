@@ -1,52 +1,49 @@
+```python
 """
-Admin Management API Router.
+Admin Management API Router (Role S4).
 
-This module provides administrative endpoints for managing appointment statuses,
-deleting appointment and client records, and viewing system dashboard metrics.
-It directly interacts with `clients_db` and `appointments_db` in-memory stores.
+Provides administrative operations for managing appointment statuses,
+deleting appointments and clients, cleaning up associated appointments,
+and retrieving dashboard statistics.
 """
 
 from fastapi import APIRouter, HTTPException, status
+
 from models import Appointment, StatusUpdate
 from routers.appointments import appointments_db
 from routers.clients import clients_db
 
 __all__ = ["router"]
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(prefix="/admin", tags=["Admin Management"])
 
 
 @router.put(
     "/appointments/{appointment_id}/status",
     response_model=Appointment,
     status_code=status.HTTP_200_OK,
-    summary="Update an appointment's status",
+    summary="Update appointment status",
     responses={
         200: {"description": "Appointment status updated successfully"},
-        404: {"description": "Appointment with the specified ID not found"}
-    }
+        404: {"description": "Appointment with the specified ID not found"},
+    },
 )
 def update_appointment_status(
     appointment_id: str,
-    status_update: StatusUpdate
+    status_update: StatusUpdate,
 ) -> Appointment:
-    """
-    Update the status of an existing appointment record (e.g. 'confirmed', 'cancelled').
-
-    - **appointment_id**: Unique identifier of the appointment to update.
-    - **status_update**: Payload containing the new status value.
-
-    Raises:
-        HTTPException (404): If no appointment exists with the given `appointment_id`.
-    """
+    """Update the status of an existing appointment."""
     if appointment_id not in appointments_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Appointment with ID '{appointment_id}' not found"
+            detail=f"Appointment with ID '{appointment_id}' not found",
         )
 
-    appointments_db[appointment_id].status = status_update.status
-    return appointments_db[appointment_id]
+    appointment = appointments_db[appointment_id]
+    appointment.status = status_update.status
+    appointments_db[appointment_id] = appointment
+
+    return appointment
 
 
 @router.delete(
@@ -54,82 +51,98 @@ def update_appointment_status(
     status_code=status.HTTP_200_OK,
     summary="Delete an appointment record",
     responses={
-        200: {"description": "Appointment record deleted successfully"},
-        404: {"description": "Appointment with the specified ID not found"}
-    }
+        200: {"description": "Appointment deleted successfully"},
+        404: {"description": "Appointment with the specified ID not found"},
+    },
 )
 def delete_appointment(appointment_id: str) -> dict[str, str]:
-    """
-    Delete an appointment record from the in-memory store.
-
-    - **appointment_id**: Unique identifier of the appointment to delete.
-
-    Raises:
-        HTTPException (404): If no appointment exists with the given `appointment_id`.
-    """
+    """Delete an appointment from the in-memory store."""
     if appointment_id not in appointments_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Appointment with ID '{appointment_id}' not found"
+            detail=f"Appointment with ID '{appointment_id}' not found",
         )
 
     del appointments_db[appointment_id]
-    return {"message": f"Appointment with ID '{appointment_id}' deleted successfully"}
+
+    return {
+        "message": f"Appointment with ID '{appointment_id}' deleted successfully"
+    }
 
 
 @router.delete(
     "/clients/{client_id}",
     status_code=status.HTTP_200_OK,
-    summary="Remove a client record",
+    summary="Delete a client record",
     responses={
-        200: {"description": "Client record removed successfully"},
-        404: {"description": "Client with the specified ID not found"}
-    }
+        200: {"description": "Client and associated appointments deleted"},
+        404: {"description": "Client with the specified ID not found"},
+    },
 )
 def delete_client(client_id: str) -> dict[str, str]:
-    """
-    Remove a client record from the in-memory store.
-
-    - **client_id**: Unique identifier of the client to remove.
-
-    Raises:
-        HTTPException (404): If no client exists with the given `client_id`.
-    """
+    """Delete a client and all appointments associated with that client."""
     if client_id not in clients_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Client with ID '{client_id}' not found"
+            detail=f"Client with ID '{client_id}' not found",
         )
 
     del clients_db[client_id]
-    return {"message": f"Client with ID '{client_id}' removed successfully"}
+
+    # Remove associated appointments to maintain data consistency.
+    associated_appointment_ids = [
+        appointment_id
+        for appointment_id, appointment in appointments_db.items()
+        if appointment.client_id == client_id
+    ]
+
+    for appointment_id in associated_appointment_ids:
+        del appointments_db[appointment_id]
+
+    return {
+        "message": (
+            f"Client with ID '{client_id}' and associated appointments "
+            "deleted successfully"
+        )
+    }
 
 
 @router.get(
     "/dashboard",
     status_code=status.HTTP_200_OK,
-    summary="Return administrative dashboard metrics",
+    summary="Retrieve administrative dashboard statistics",
     responses={
-        200: {"description": "Dashboard metrics summary"}
-    }
+        200: {"description": "Dashboard statistics summary"},
+    },
 )
-def get_dashboard() -> dict[str, int]:
-    """
-    Retrieve summary statistics containing total clients, total appointments,
-    and pending appointments.
-
-    Returns:
-        dict: Object containing total_clients, total_appointments, and pending_appointments count.
-    """
+def get_dashboard_stats() -> dict[str, int]:
+    """Return client totals and appointment counts by status."""
     total_clients = len(clients_db)
     total_appointments = len(appointments_db)
+
     pending_appointments = sum(
-        1 for appointment in appointments_db.values()
+        1
+        for appointment in appointments_db.values()
         if appointment.status.lower() == "pending"
+    )
+
+    confirmed_appointments = sum(
+        1
+        for appointment in appointments_db.values()
+        if appointment.status.lower() == "confirmed"
+    )
+
+    cancelled_appointments = sum(
+        1
+        for appointment in appointments_db.values()
+        if appointment.status.lower() == "cancelled"
     )
 
     return {
         "total_clients": total_clients,
         "total_appointments": total_appointments,
-        "pending_appointments": pending_appointments
+        "pending_appointments": pending_appointments,
+        "confirmed_appointments": confirmed_appointments,
+        "cancelled_appointments": cancelled_appointments,
     }
+```

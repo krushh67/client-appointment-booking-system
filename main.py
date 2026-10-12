@@ -1,25 +1,29 @@
 """
-Main entry point for the Client Appointment Booking System FastAPI application.
+Main Application Entry Point (Role S4).
 
-This module initializes the FastAPI app instance, registers all domain routers
-(Clients, Appointments, Admin), sets up CORS middleware for frontend integration,
-and defines the root health-check endpoint.
+FastAPI application for the Client Appointment Booking System.
+Registers client, appointment, and admin routers, configures CORS
+for frontend integration, and provides the root health-check endpoint.
 """
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+
 from routers.admin import router as admin_router
 from routers.appointments import router as appointments_router
 from routers.clients import router as clients_router
 
-# Initialize the FastAPI application with required title and version
+
 app = FastAPI(
     title="Client Appointment Booking System",
+    description=(
+        "A REST API for client registration, appointment booking, "
+        "and admin management."
+    ),
     version="1.0.0",
-    description="A Python REST API for client registration, appointment booking, and admin management."
 )
 
-# Enable CORS for frontend applications (supports Vite at http://localhost:5173, etc.)
+# Enable CORS for frontend applications, including Vite during development.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register project routers
+# Register project routers.
 app.include_router(clients_router)
 app.include_router(appointments_router)
 app.include_router(admin_router)
@@ -37,7 +41,8 @@ app.include_router(admin_router)
 @app.get(
     "/",
     status_code=status.HTTP_200_OK,
-    summary="Health check endpoint",
+    summary="Root Health Check",
+    tags=["System"],
     responses={
         200: {
             "description": "API is operational",
@@ -45,26 +50,22 @@ app.include_router(admin_router)
                 "application/json": {
                     "example": {
                         "status": "ok",
-                        "message": "Appointment Booking API is running"
+                        "message": "Appointment Booking API is running",
                     }
                 }
-            }
+            },
         }
-    }
+    },
 )
-def root_health_check() -> dict[str, str]:
-    """
-    Root endpoint serving as a health check for the Client Appointment Booking System API.
-
-    Returns:
-        dict: Standard health check status payload.
-    """
+def health_check() -> dict[str, str]:
+    """Return the operational status of the API."""
     return {
         "status": "ok",
-        "message": "Appointment Booking API is running"
+        "message": "Appointment Booking API is running",
     }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

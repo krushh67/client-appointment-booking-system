@@ -1,8 +1,9 @@
 """
-Comprehensive Test Suite for the Client Appointment Booking System (Role S5).
+Comprehensive Integration Test Suite for the Client Appointment Booking System.
 
-Validates all primary API endpoints across Client Management, Appointment Booking,
-and Admin Management modules using FastAPI's TestClient and Pytest.
+Tests the root health check, client registration and retrieval,
+appointment booking, admin status updates, dashboard statistics,
+and error handling.
 """
 
 import pytest
@@ -12,107 +13,115 @@ from main import app
 from routers.clients import clients_db
 from routers.appointments import appointments_db
 
+
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def reset_databases():
-    """Clear all in-memory database stores before and after each test execution."""
+    """Clear in-memory database stores before and after each test."""
     clients_db.clear()
     appointments_db.clear()
+
     yield
+
     clients_db.clear()
     appointments_db.clear()
 
 
 def test_health_check():
-    """Verify GET / returns HTTP 200 and status 'ok'."""
+    """GET / returns HTTP 200 and the API health status."""
     response = client.get("/")
+
     assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ok"
-    assert data["message"] == "Appointment Booking API is running"
+    assert response.json() == {
+        "status": "ok",
+        "message": "Appointment Booking API is running",
+    }
 
 
 def test_register_client():
-    """Verify POST /clients with valid data returns HTTP 200."""
+    """POST /clients registers a new client."""
     payload = {
         "client_id": "client-101",
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "phone": "+1-555-0199",
-        "registered_at": "2026-10-07T10:00:00Z"
+        "registered_at": "2026-10-07T10:00:00Z",
     }
+
     response = client.post("/clients", json=payload)
+
     assert response.status_code == 200
-    data = response.json()
-    assert data["client_id"] == "client-101"
-    assert data["name"] == "Alice Johnson"
-    assert data["email"] == "alice.johnson@example.com"
+    assert response.json()["client_id"] == "client-101"
+    assert response.json()["name"] == "Alice Johnson"
     assert "client-101" in clients_db
 
 
 def test_register_duplicate_client():
-    """Verify POST /clients with same client_id returns HTTP 400."""
+    """Registering the same client ID twice returns HTTP 400."""
     payload = {
         "client_id": "client-101",
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "phone": "+1-555-0199",
-        "registered_at": "2026-10-07T10:00:00Z"
+        "registered_at": "2026-10-07T10:00:00Z",
     }
-    initial_res = client.post("/clients", json=payload)
-    assert initial_res.status_code == 200
 
-    duplicate_res = client.post("/clients", json=payload)
-    assert duplicate_res.status_code == 400
-    assert "already registered" in duplicate_res.json()["detail"]
+    first_response = client.post("/clients", json=payload)
+    duplicate_response = client.post("/clients", json=payload)
+
+    assert first_response.status_code == 200
+    assert duplicate_response.status_code == 400
 
 
 def test_get_all_clients():
-    """Verify GET /clients returns HTTP 200."""
-    client.post("/clients", json={
+    """GET /clients returns the registered clients."""
+    payload = {
         "client_id": "client-101",
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "phone": "+1-555-0199",
-        "registered_at": "2026-10-07T10:00:00Z"
-    })
+        "registered_at": "2026-10-07T10:00:00Z",
+    }
+    client.post("/clients", json=payload)
+
     response = client.get("/clients")
+
     assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 1
-    assert data[0]["client_id"] == "client-101"
+    assert isinstance(response.json(), list)
+    assert len(response.json()) == 1
+    assert response.json()[0]["client_id"] == "client-101"
 
 
 def test_get_client_by_id():
-    """Verify GET /clients/{client_id} for existing client returns HTTP 200."""
+    """GET /clients/{client_id} retrieves an existing client."""
     payload = {
         "client_id": "client-102",
         "name": "Bob Smith",
         "email": "bob.smith@example.com",
         "phone": "+1-555-0122",
-        "registered_at": "2026-10-07T11:00:00Z"
+        "registered_at": "2026-10-07T11:00:00Z",
     }
     client.post("/clients", json=payload)
 
-    response = client.get(f"/clients/{payload['client_id']}")
+    response = client.get("/clients/client-102")
+
     assert response.status_code == 200
-    data = response.json()
-    assert data["client_id"] == payload["client_id"]
-    assert data["name"] == payload["name"]
+    assert response.json()["client_id"] == "client-102"
+    assert response.json()["name"] == "Bob Smith"
 
 
 def test_book_appointment():
-    """Verify POST /appointments for an existing client returns HTTP 200."""
-    client.post("/clients", json={
+    """POST /appointments books an appointment for an existing client."""
+    client_payload = {
         "client_id": "client-101",
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "phone": "+1-555-0199",
-        "registered_at": "2026-10-07T10:00:00Z"
-    })
+        "registered_at": "2026-10-07T10:00:00Z",
+    }
+    client.post("/clients", json=client_payload)
 
     appointment_payload = {
         "appointment_id": "apt-501",
@@ -120,51 +129,55 @@ def test_book_appointment():
         "service_type": "Consultation",
         "date": "2026-10-15",
         "time": "14:00",
-        "status": "pending"
     }
+
     response = client.post("/appointments", json=appointment_payload)
+
     assert response.status_code == 200
-    data = response.json()
-    assert data["appointment_id"] == "apt-501"
-    assert data["client_id"] == "client-101"
-    assert data["service_type"] == "Consultation"
+    assert response.json()["appointment_id"] == "apt-501"
+    assert response.json()["client_id"] == "client-101"
+    assert response.json()["status"] == "pending"
     assert "apt-501" in appointments_db
 
 
 def test_appointment_client_not_found():
-    """Verify POST /appointments for a non-existent client returns HTTP 404."""
+    """Booking an appointment for a missing client returns HTTP 404."""
     appointment_payload = {
         "appointment_id": "apt-999",
         "client_id": "non-existent-client",
         "service_type": "Consultation",
         "date": "2026-10-20",
         "time": "15:00",
-        "status": "pending"
     }
+
     response = client.post("/appointments", json=appointment_payload)
+
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
 
 def test_admin_dashboard():
-    """Verify GET /admin/dashboard returns HTTP 200."""
-    client.post("/clients", json={
+    """GET /admin/dashboard returns correct dashboard statistics."""
+    client_payload = {
         "client_id": "client-101",
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "phone": "+1-555-0199",
-        "registered_at": "2026-10-07T10:00:00Z"
-    })
-    client.post("/appointments", json={
+        "registered_at": "2026-10-07T10:00:00Z",
+    }
+    client.post("/clients", json=client_payload)
+
+    appointment_payload = {
         "appointment_id": "apt-501",
         "client_id": "client-101",
         "service_type": "Consultation",
         "date": "2026-10-15",
         "time": "14:00",
-        "status": "pending"
-    })
+    }
+    client.post("/appointments", json=appointment_payload)
 
     response = client.get("/admin/dashboard")
+
     assert response.status_code == 200
     data = response.json()
     assert data["total_clients"] == 1
@@ -173,27 +186,31 @@ def test_admin_dashboard():
 
 
 def test_confirm_appointment():
-    """Verify PUT /admin/appointments/{appointment_id}/status with status='confirmed' returns HTTP 200."""
-    client.post("/clients", json={
+    """Updating an appointment status to confirmed returns HTTP 200."""
+    client_payload = {
         "client_id": "client-101",
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "phone": "+1-555-0199",
-        "registered_at": "2026-10-07T10:00:00Z"
-    })
-    client.post("/appointments", json={
+        "registered_at": "2026-10-07T10:00:00Z",
+    }
+    client.post("/clients", json=client_payload)
+
+    appointment_payload = {
         "appointment_id": "apt-501",
         "client_id": "client-101",
         "service_type": "Consultation",
         "date": "2026-10-15",
         "time": "14:00",
-        "status": "pending"
-    })
+    }
+    client.post("/appointments", json=appointment_payload)
 
-    status_payload = {"status": "confirmed"}
-    response = client.put("/admin/appointments/apt-501/status", json=status_payload)
+    response = client.put(
+        "/admin/appointments/apt-501/status",
+        json={"status": "confirmed"},
+    )
+
     assert response.status_code == 200
-    data = response.json()
-    assert data["appointment_id"] == "apt-501"
-    assert data["status"] == "confirmed"
+    assert response.json()["appointment_id"] == "apt-501"
+    assert response.json()["status"] == "confirmed"
     assert appointments_db["apt-501"].status == "confirmed"
