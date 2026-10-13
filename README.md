@@ -15,22 +15,21 @@
 5. [Technology Stack](#5-technology-stack)
 6. [Architecture Overview](#6-architecture-overview)
 7. [Repository Structure](#7-repository-structure)
-8. [⚠️ Known Issue on the Current Branch (Read First)](#8-known-issue-on-the-current-branch-read-first)
-9. [Prerequisites](#9-prerequisites)
-10. [Installation & Setup](#10-installation--setup)
-11. [Running the Application Locally](#11-running-the-application-locally)
-12. [API Reference](#12-api-reference)
-13. [Example Requests & Responses](#13-example-requests--responses)
-14. [Running the Tests](#14-running-the-tests)
-15. [Docker](#15-docker)
-16. [Jenkins CI/CD Pipeline](#16-jenkins-cicd-pipeline)
-17. [Kubernetes Deployment](#17-kubernetes-deployment)
-18. [Verifying the Application Is Running](#18-verifying-the-application-is-running)
-19. [Troubleshooting](#19-troubleshooting)
-20. [Team & Responsibilities](#20-team--responsibilities)
-21. [Further Documentation](#21-further-documentation)
-22. [Limitations & Future Enhancements](#22-limitations--future-enhancements)
-23. [Conclusion](#23-conclusion)
+8. [Prerequisites](#8-prerequisites)
+9. [Installation & Setup](#9-installation--setup)
+10. [Running the Application Locally](#10-running-the-application-locally)
+11. [API Reference](#11-api-reference)
+12. [Example Requests & Responses](#12-example-requests--responses)
+13. [Running the Tests](#13-running-the-tests)
+14. [Docker](#14-docker)
+15. [Jenkins CI/CD Pipeline](#15-jenkins-cicd-pipeline)
+16. [Kubernetes Deployment](#16-kubernetes-deployment)
+17. [Verifying the Application Is Running](#17-verifying-the-application-is-running)
+18. [Troubleshooting](#18-troubleshooting)
+19. [Team & Responsibilities](#19-team--responsibilities)
+20. [Further Documentation](#20-further-documentation)
+21. [Limitations & Future Enhancements](#21-limitations--future-enhancements)
+22. [Conclusion](#22-conclusion)
 
 ---
 
@@ -44,7 +43,7 @@ The **Client Appointment Booking System** lets a service business (a clinic, sal
 
 The backend is written in **Python with FastAPI**. A **React + Vite** web interface (*AppointmentHub*) in [`frontend/`](frontend/) calls the same API. Around the application, the repository contains the DevOps assets this lab focuses on: a **Pytest** suite, a **Jenkinsfile**, **Dockerfiles** with **Docker Compose**, and **Kubernetes** manifests.
 
-> **Data storage:** all data is kept **in memory** (Python dictionaries). There is no database, so everything is lost when the server restarts. This is deliberate for a lab project; see [Limitations](#22-limitations--future-enhancements).
+> **Data storage:** all data is kept **in memory** (Python dictionaries). There is no database, so everything is lost when the server restarts. This is deliberate for a lab project; see [Limitations](#21-limitations--future-enhancements).
 
 ## 2. Problem Statement
 
@@ -69,7 +68,7 @@ A small, well-tested API that stores clients and appointments, checks that a boo
 
 ## 4. Implemented Features
 
-Everything below was verified by reading the source code and by running the test suite (see [Section 14](#14-running-the-tests)).
+Everything below was verified by reading the source code and by running the test suite (see [Section 13](#13-running-the-tests)).
 
 | Area | Feature | Source |
 |---|---|---|
@@ -187,36 +186,7 @@ client-appointment-booking-system/
 └── README.md                   # This file
 ```
 
-## 8. Known Issue on the Current Branch (Read First)
-
-On the `feature/1` branch at commit `b5030ce` (latest at the time of writing), **three files were damaged by a merge-conflict resolution** in merge commit `e688f27`:
-
-| File | Problem | Effect |
-|---|---|---|
-| `routers/admin.py` | Line 1 is ` ```python ` and the last line is ` ``` ` (Markdown code fences) | `SyntaxError`: the app cannot start; `test_main.py` cannot be collected |
-| `requirements.txt` | Line 1 is ` ```text ` and the last line is ` ``` ` | `pip install -r requirements.txt` fails with *Invalid requirement*; the Jenkins *Install* stage and the backend Docker build fail |
-| `frontend/package-lock.json` | Invalid JSON (a mis-merged `devDependencies` block) | `npm ci` fails, so the **frontend Docker image** cannot be built; `npm install` still works |
-
-**Verified effect** (Python 3.11, pinned dependencies):
-
-- As committed: `test_main.py` → *1 error during collection*; `test_appointments.py` → **10 passed**.
-- With only those fence lines removed (in a scratch copy, not committed): **19 / 19 tests passed**.
-
-**How the team should fix it** (in a separate, reviewed commit, not part of this documentation change):
-
-```bash
-# 1. Delete the first and last (```) lines of these two files in an editor:
-#      routers/admin.py
-#      requirements.txt
-# 2. Restore the last valid lock file (its package.json matches the current one):
-git checkout 673fb73 -- frontend/package-lock.json
-# 3. Verify:
-python -m pytest test_main.py test_appointments.py -v
-```
-
-The instructions in the rest of this README assume the fix has been applied.
-
-## 9. Prerequisites
+## 8. Prerequisites
 
 | Software | Needed for | Notes |
 |---|---|---|
@@ -225,12 +195,12 @@ The instructions in the rest of this README assume the fix has been applied.
 | Git | Cloning the repository | |
 | Node.js 18+ and npm | *Optional:* the React UI | The frontend Docker image uses Node 20 |
 | Docker Desktop / Docker Engine | *Optional:* containers | Docker Compose v2 (`docker compose`) |
-| Jenkins (2.x, Pipeline plugin) | *Optional:* CI/CD | See [Section 16](#16-jenkins-cicd-pipeline) |
-| kubectl + a local cluster (Docker Desktop Kubernetes, Minikube or kind) | *Optional:* Kubernetes | See [Section 17](#17-kubernetes-deployment) |
+| Jenkins (2.x, Pipeline plugin) | *Optional:* CI/CD | See [Section 15](#15-jenkins-cicd-pipeline) |
+| kubectl + a local cluster (Docker Desktop Kubernetes, Minikube or kind) | *Optional:* Kubernetes | See [Section 16](#16-kubernetes-deployment) |
 
-## 10. Installation & Setup
+## 9. Installation & Setup
 
-### 10.1 Clone the repository
+### 9.1 Clone the repository
 
 ```bash
 git clone https://github.com/krushh67/client-appointment-booking-system.git
@@ -238,7 +208,7 @@ cd client-appointment-booking-system
 git checkout feature/1        # the repository's default/integration branch
 ```
 
-### 10.2 Create a virtual environment
+### 9.2 Create a virtual environment
 
 Windows (PowerShell):
 
@@ -256,7 +226,7 @@ source venv/bin/activate
 
 > On Windows, `py -3.11` picks Python 3.11 even if a newer default is installed. Use `py -0` to list the installed versions.
 
-### 10.3 Install dependencies
+### 9.3 Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -264,7 +234,7 @@ pip install -r requirements.txt
 
 This installs FastAPI, Uvicorn, Pydantic, Pytest and HTTPX at the pinned versions.
 
-### 10.4 Environment variables
+### 9.4 Environment variables
 
 **None are required.** The backend reads no environment variables, holds no secrets and needs no `.env` file. The only optional variable is in the UI:
 
@@ -272,9 +242,9 @@ This installs FastAPI, Uvicorn, Pydantic, Pytest and HTTPX at the pinned version
 |---|---|---|---|
 | `VITE_API_URL` | `frontend/src/api/client.js` | `http://localhost:8000` | Base URL of the API the UI calls |
 
-## 11. Running the Application Locally
+## 10. Running the Application Locally
 
-### 11.1 Start the API
+### 10.1 Start the API
 
 ```bash
 uvicorn main:app --reload --port 8000
@@ -292,7 +262,7 @@ Open:
 - Swagger UI (try every endpoint from the browser): <http://localhost:8000/docs>
 - ReDoc: <http://localhost:8000/redoc>
 
-### 11.2 *(Optional)* Start the web UI
+### 10.2 *(Optional)* Start the web UI
 
 In a **second** terminal:
 
@@ -304,9 +274,9 @@ npm run dev
 
 Open <http://localhost:5173>. The UI talks to the API at `http://localhost:8000`, so keep the API running.
 
-> Use `npm install` rather than `npm ci` until the lock-file issue in [Section 8](#8-known-issue-on-the-current-branch-read-first) is fixed.
+> Use `npm install` rather than `npm ci` until the frontend lock file is valid; use `npm install` to regenerate it if needed.
 
-## 12. API Reference
+## 11. API Reference
 
 Base URL: `http://localhost:8000`. All request and response bodies are JSON.
 
@@ -355,7 +325,7 @@ All fields are strings. Leading and trailing whitespace is stripped automaticall
 
 **StatusUpdate**: `{ "status": "confirmed" }`. Intended values are `pending`, `confirmed` and `cancelled`. Any string is accepted, but the dashboard counts only those three (case-insensitive).
 
-## 13. Example Requests & Responses
+## 12. Example Requests & Responses
 
 The responses below were captured from the real application. Examples use `curl`. In Windows PowerShell, call `curl.exe` explicitly, or use the Swagger UI at `/docs` instead.
 
@@ -468,7 +438,7 @@ curl -X DELETE http://localhost:8000/admin/clients/client-001
 { "message": "Client with ID 'client-001' and associated appointments deleted successfully" }
 ```
 
-## 14. Running the Tests
+## 13. Running the Tests
 
 ```bash
 python -m pytest test_main.py test_appointments.py -v
@@ -494,9 +464,9 @@ Both files clear the in-memory stores before and after every test (an `autouse` 
 
 **Not covered by tests:** `DELETE /admin/appointments/...`, `DELETE /admin/clients/...` and the `cancelled` count on the dashboard. No coverage percentage has been measured (`pytest-cov` is not a dependency).
 
-## 15. Docker
+## 14. Docker
 
-### 15.1 Backend image ([`Dockerfile`](Dockerfile))
+### 14.1 Backend image ([`Dockerfile`](Dockerfile))
 
 The image is built in two stages: a **builder** stage installs the dependencies, and a slim **runner** stage (`python:3.9-slim`) copies only those packages and the app code (`main.py`, `models.py`, `routers/`). It runs as a **non-root user** (`appuser`, UID 1001), exposes port **8000**, has a `HEALTHCHECK` that calls `GET /`, and starts with `uvicorn main:app --host 0.0.0.0 --port 8000`. [`.dockerignore`](.dockerignore) keeps tests, docs, `k8s/`, the `Jenkinsfile`, virtual environments and secret files out of the build context.
 
@@ -509,7 +479,7 @@ docker logs -f appointment-api
 docker stop appointment-api && docker rm appointment-api
 ```
 
-### 15.2 Full stack with Docker Compose ([`docker-compose.yml`](docker-compose.yml))
+### 14.2 Full stack with Docker Compose ([`docker-compose.yml`](docker-compose.yml))
 
 | Service | Image | Host → container port |
 |---|---|---|
@@ -525,9 +495,9 @@ docker compose ps
 docker compose down
 ```
 
-> Status: the Docker files were reviewed against the code. A Docker build was **not** executed while this README was written (Docker Engine was not running on the documentation machine), and on the current branch the builds fail until the issue in [Section 8](#8-known-issue-on-the-current-branch-read-first) is fixed. More detail: [docs/Docker_Containerization_Guide.md](docs/Docker_Containerization_Guide.md).
+> Status: the Docker files were reviewed against the code, but a Docker build was **not** executed because Docker Engine was not running on the documentation machine. More detail: [docs/Docker_Containerization_Guide.md](docs/Docker_Containerization_Guide.md).
 
-## 16. Jenkins CI/CD Pipeline
+## 15. Jenkins CI/CD Pipeline
 
 The [`Jenkinsfile`](Jenkinsfile) is a declarative pipeline written for a **Windows** Jenkins agent (it uses `bat` steps).
 
@@ -561,9 +531,9 @@ The `Jenkinsfile` has no `triggers {}` block, so builds start manually (or via a
 > **Honest status:**
 > - The commit history (`fdd701e`, `b12bd4d`, `e171605`, `3a41b90`) shows the pipeline being adjusted for a Windows Jenkins node, which is evidence that it was run. No build logs or screenshots are stored in the repository.
 > - Because the Docker and Kubernetes stages swallow errors, **a green build does not prove that an image was built or deployed**. Check the console output for the word "Simulating".
-> - On the current branch the *Install Dependencies* stage would fail until [Section 8](#8-known-issue-on-the-current-branch-read-first) is fixed.
+> - On the current branch the *Install Dependencies* stage may fail if dependency files contain invalid entries; verify the dependency installation stage in Jenkins.
 
-## 17. Kubernetes Deployment
+## 16. Kubernetes Deployment
 
 | Manifest | Kind | Key settings |
 |---|---|---|
@@ -599,39 +569,39 @@ kubectl port-forward service/appointment-booking-service 8080:80
 kubectl delete -f k8s/service.yaml -f k8s/deployment.yaml
 ```
 
-> **Important:** with 2 replicas, **each pod has its own in-memory data**. A client registered through one pod may not be visible through the other, because the Service load-balances requests between them. For a reliable demo, scale to one replica (`kubectl scale deployment appointment-booking-api --replicas=1`) or add a shared database (see [Limitations](#22-limitations--future-enhancements)).
+> **Important:** with 2 replicas, **each pod has its own in-memory data**. A client registered through one pod may not be visible through the other, because the Service load-balances requests between them. For a reliable demo, scale to one replica (`kubectl scale deployment appointment-booking-api --replicas=1`) or add a shared database (see [Limitations](#21-limitations--future-enhancements)).
 >
 > **Status:** the manifests were reviewed but **not applied** to a cluster while this README was written. No cluster was available on the documentation machine, and no deployment evidence is stored in the repository.
 
-## 18. Verifying the Application Is Running
+## 17. Verifying the Application Is Running
 
 | Check | Expected |
 |---|---|
 | `curl http://localhost:8000/` | `{"status":"ok","message":"Appointment Booking API is running"}` |
 | Browser → <http://localhost:8000/docs> | Swagger UI listing the *System*, *Client Management*, *Appointments* and *Admin Management* groups |
-| `python -m pytest test_main.py test_appointments.py -v` | `19 passed` (after the Section 8 fix) |
+| `python -m pytest test_main.py test_appointments.py -v` | `19 passed` (in the recorded local scratch-copy run) |
 | `docker ps` | `appointment-booking-api` with status `(healthy)` |
 | `kubectl get pods -l app=appointment-booking-api` | 2 pods `Running`, `READY 1/1` |
 
-## 19. Troubleshooting
+## 18. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `SyntaxError: invalid syntax` pointing at ` ```python ` in `routers/admin.py` | Stray Markdown fences from a merge | Apply the fix in [Section 8](#8-known-issue-on-the-current-branch-read-first) |
-| `ERROR: Invalid requirement: '```text'` | Same, in `requirements.txt` | Same |
-| `npm ci` → *can only install with an existing package-lock.json* | `frontend/package-lock.json` is invalid JSON | Use `npm install`, or restore the lock file (Section 8) |
+| `SyntaxError: invalid syntax` pointing at ` ```python ` in `routers/admin.py` | Stray Markdown fences from a merge | Remove the stray Markdown fence lines and keep valid Python code |
+| `ERROR: Invalid requirement: '```text'` | Same, in `requirements.txt` | Remove the stray Markdown fence lines so the file contains valid dependency specifications |
+| `npm ci` → *can only install with an existing package-lock.json* | `frontend/package-lock.json` is invalid JSON | Use `npm install`, or regenerate the lock file with `npm install` |
 | pip tries to build `pydantic-core` / asks for Rust or Cargo | Python 3.13+ | Use Python 3.9–3.12 (`py -3.11 -m venv venv`) |
 | `ModuleNotFoundError: No module named 'routers'` or `'models'` | Command run from the wrong folder | Run commands from the repository root |
 | `uvicorn` / `pytest` "not recognized" | Virtual environment not activated | Activate `venv`, or use `python -m uvicorn ...` / `python -m pytest ...` |
 | `[Errno 10048]` / *address already in use* on port 8000 | Another process uses the port | Stop it, or run `uvicorn main:app --port 8001` |
 | PowerShell: `Activate.ps1 cannot be loaded` | Script execution policy | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, then activate again |
-| UI shows *Cannot connect to backend server* | API not running on port 8000 | Start the API first ([Section 11.1](#111-start-the-api)) |
+| UI shows *Cannot connect to backend server* | API not running on port 8000 | Start the API first ([Section 10.1](#101-start-the-api)) |
 | Data disappeared | Server restarted (in-memory storage) | Expected behaviour; re-register the data |
 | `curl` in PowerShell behaves oddly | `curl` is an alias for `Invoke-WebRequest` | Use `curl.exe` or Swagger UI |
-| K8s pods show `ErrImagePull` / `ImagePullBackOff` | Cluster cannot see the local image | Load the image into the cluster (Section 17, step 2) |
+| K8s pods show `ErrImagePull` / `ImagePullBackOff` | Cluster cannot see the local image | Load the image into the cluster (Section 16, step 2) |
 | Docker: *cannot connect to the Docker daemon* | Docker Desktop not started | Start Docker Desktop and wait until it is running |
 
-## 20. Team & Responsibilities
+## 19. Team & Responsibilities
 
 | PRN | Name | Responsibility |
 |---|---|---|
@@ -648,7 +618,7 @@ kubectl delete -f k8s/service.yaml -f k8s/deployment.yaml
 
 The rows for Shweta and Vighnesh are the official allocation. The other rows show what the **Git history** supports. How each row was derived, and which parts still need confirmation, is explained in [docs/TEAM_CONTRIBUTION_AUDIT.md](docs/TEAM_CONTRIBUTION_AUDIT.md).
 
-## 21. Further Documentation
+## 20. Further Documentation
 
 | Document | Contents |
 |---|---|
@@ -661,7 +631,7 @@ The rows for Shweta and Vighnesh are the official allocation. The other rows sho
 | [docs/PRESENTATION_QA.md](docs/PRESENTATION_QA.md) | Likely viva/faculty questions with answers |
 | [docs/PRESENTATION_CHECKLIST.md](docs/PRESENTATION_CHECKLIST.md) | Demo commands, sequence and fallback plan |
 
-## 22. Limitations & Future Enhancements
+## 21. Limitations & Future Enhancements
 
 | Current limitation | Possible enhancement |
 |---|---|
@@ -678,12 +648,12 @@ The rows for Shweta and Vighnesh are the official allocation. The other rows sho
 | Delete endpoints and the `cancelled` count are untested; no coverage report | Add tests and `pytest-cov` |
 | No notifications | Email/SMS reminders |
 
-## 23. Conclusion
+## 22. Conclusion
 
 The Client Appointment Booking System is a small but complete example of a modern service delivered the DevOps way:
 
 - a modular FastAPI backend with automatic validation and documentation;
-- an automated Pytest suite (19 tests) that passes once the merge damage on the current branch is fixed;
+- an automated Pytest suite (19 tests) that passed in the recorded local scratch-copy run after the merge damage was corrected;
 - a Git/GitHub workflow with feature branches and pull requests;
 - a Jenkins pipeline that chains install, test, compile-check, image build and deploy;
 - Docker images for both the API and the UI;
